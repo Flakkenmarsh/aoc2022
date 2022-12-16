@@ -54,50 +54,96 @@ def circle_x_range(reading, y):
     mid = reading.sensor
     x_min = mid[0] - (reading.distance - abs(mid[1] - y))
     x_max = mid[0] + (reading.distance - abs(mid[1] - y))
-    return x_min, x_max
+    return x_min, x_max  # min(x_min, x_max), max(x_min, x_max)
 
 
-def part1():
+def puzzle(part2):
     sensors_beacons = {}
     x_range = [math.inf, -math.inf]
     readings = []
     for line in lines:
-        numbers = [int(x.group()) for x in re.finditer(r'\d+', line)]
+        numbers = [int(x) for x in re.findall('[-+]?\d+', line)]
         sensor = (numbers[0], numbers[1])
         beacon = (numbers[2], numbers[3])
         sensors_beacons[sensor] = beacon
         readings.append(Reading(sensor, beacon))
         x_range[0] = get_min(x_range[0], sensor, beacon)
-        x_range[1] = get_max(x_range[1], sensor, beacon)
+        x_range[1] = get_max(x_range[1], sensor, beacon)+1
 
-    y = 2000000 # 5 127 797 x5065467 x5065465
+    if len(lines) > 18:
+        y = 2000000
+        MAX = 4000000
+    else:
+        y = 11
+        MAX = 20
     x_offset = abs(x_range[0])
+    found = False
 
-    for y in range(y, y+1):
-        row = ["." for _ in range(x_range[1]+x_offset+1)]
+    if part2:
+        y0 = MAX
+        y1 = 0
+        y2 = -1
+    else:
+        y0 = y
+        y1 = y+1
+        y2 = 1
+
+    for y in range(y0, y1, y2):
+        if part2:
+            if y % 1000 == 0:
+                print(y)
+        if not part2:
+            row = ["." for _ in range(x_range[1]+x_offset+20)]
     
-        for reading in readings:
-            if reading.beacon[1] == y:
-                row[reading.beacon[0] + x_offset] = "B"
-            elif reading.sensor[1] == y:
-                row[reading.sensor[0] + x_offset] = "S"
-        # print("".join(row))
-        count = 0
+            for reading in readings:
+                if reading.beacon[1] == y:
+                    row[reading.beacon[0] + x_offset] = "B"
+                elif reading.sensor[1] == y:
+                    row[reading.sensor[0] + x_offset] = "S"
 
+        ranges = []
+        invalid = False
         for reading in readings:
             start_x, end_x = circle_x_range(reading, y)
-            for x in range(start_x, end_x+1):
-                if row[x + x_offset] == "B" or row[x + x_offset] == "S":
-                    continue
+            r = (min(start_x, end_x), max(start_x, end_x))
+            r = (max(r[0], 0), min(r[1], MAX))
+            if r == (0, MAX):
+                invalid = True
+                break
+            if not ranges.__contains__(r) and start_x <= end_x:
+                ranges.append(r)
+            if not part2:
+                for x in range(start_x, end_x+1):
+                    if row[x + x_offset] == "B" or row[x + x_offset] == "S":
+                        continue
 
-                row[x + x_offset] = "#"
-                count += 1
-        #print("".join(row))
-    print(count)
-    print(row.count("S"))
-    print(row.count("#"))
-    return
+                    row[x + x_offset] = "#"
+
+
+        if part2:
+            if invalid:
+                continue
+            if ranges.__contains__((0, MAX)):
+                continue
+
+            ranges.sort()
+            left = ranges[0][0]
+            right = ranges[0][1]
+            for i in range(len(ranges)-1):
+                if left <= ranges[i+1][0] <= right:
+                    if ranges[i+1][1] > right:
+                        right = ranges[i+1][1]
+                if ranges[i+1][0] - right > 1:
+                    print("Part 2:", (right+1)*4000000 + y)
+                    found = True
+                    break
+            if found:
+                break
+
+    if not part2:
+        print("Part 1:", row.count("#"))
 
 
 if __name__ == "__main__":
-    part1()
+    puzzle(False)
+    puzzle(True)
