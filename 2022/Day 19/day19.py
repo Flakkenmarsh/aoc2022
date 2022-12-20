@@ -1,11 +1,12 @@
 import math
 import re
-from copy import deepcopy
+from copy import deepcopy, copy
 
-file = open('2022/Day 19/input.csv', 'r')
+file = open('input.csv', 'r')
 lines = file.readlines()
 lines = [line.strip('\n' ',') for line in lines]
 types = ["ore", "clay", "obsidian", "geode"]
+max_geodes = 0
 
 
 class Cost():
@@ -13,12 +14,7 @@ class Cost():
         self.ore_cost = ore
         self.clay_cost = clay
         self.obsidian_cost = obsidian
-        self.as_dict = {}
-        self.as_dict["ore"] = ore
-        self.as_dict["clay"] = clay
-        self.as_dict["obsidian"] = obsidian
-        self.as_dict["geode"] = 0
-
+        self.as_dict = {"ore": ore, "clay": clay, "obsidian": obsidian, "geode": 0}
 
     def __str__(self):
         result = "Cost: "
@@ -36,12 +32,7 @@ class Blueprint():
         self.clay_cost = clay
         self.obsidian_cost = obsidian
         self.geode_cost = geode
-        self.as_dict = {}
-        self.as_dict["ore"] = ore
-        self.as_dict["clay"] = clay
-        self.as_dict["obsidian"] = obsidian
-        self.as_dict["geode"] = geode
-
+        self.as_dict = {"ore": ore, "clay": clay, "obsidian": obsidian, "geode": geode}
 
     def __str__(self):
         result = "Blueprint " + str(self.number) + ":\n"
@@ -75,16 +66,20 @@ def can_generate(bots):
     return types
 
 
-def ore_required(levels, cost):
+def ore_required(levels, bots, cost):
     global types
 
     max_required = 0
     max_type = ""
-    for t in types:
-        required = cost.as_dict[t] - levels[t]
+
+    for c in cost.as_dict:
+        if bots[c] == 0:
+            continue
+        required = cost.as_dict[c] - levels[c]
+        required = int(math.ceil(required/bots[c]))
         if required > max_required:
             max_required = required
-            max_type = t
+            max_type = c
 
     return max_required  # , max_type
 
@@ -97,30 +92,45 @@ def pay_for_bot(levels, cost):
 
 
 def collect(minutes, bots, levels, bp):
-    if minutes <= 0:
-        print("Geodes: ", levels["geode"])
+    global max_geodes
+
+    if minutes == 24:
+        if levels["geode"] > max_geodes:
+            max_geodes = levels["geode"]
+            print("Geodes:", max_geodes)
+        # print(bots)
+        # print(levels)
+        return
+    elif minutes > 24:
         return
 
     bot_types = can_generate(bots)  # the bot types that can be generated with the supply types currently being generated
 
     for t in bot_types:
-        required = ore_required(levels, bp.as_dict[t])  # need to consider the amount of bots per type - this will decrease the required time
-        if required <= 0:
-            required = 1
-        temp_bots = deepcopy(bots)
-        temp_levels = collect_ore(temp_bots, levels, required)
-        temp_levels = pay_for_bot(levels, bp.as_dict[t])
+        if minutes == 1 and t == "clay":
+            print("Stop here")
+        time_required = ore_required(levels, bots, bp.as_dict[t])
+        if time_required > 24-minutes:  # not enough time left
+            temp_bots = copy(bots)
+            temp_levels = collect_ore(temp_bots, copy(levels), 24-minutes)  # generate everything until the end
+            if temp_levels["geode"] > max_geodes:
+                max_geodes = temp_levels["geode"]
+                print("Geodes:", max_geodes)
+            continue
+        if time_required < 0:  # if time is negative, bot is ready to be built
+            time_required = 0  # won't require extra time
+        temp_bots = copy(bots)
+        temp_levels = collect_ore(temp_bots, copy(levels), time_required)  # time elapses
+        temp_levels = pay_for_bot(temp_levels, bp.as_dict[t])
+        temp_levels = collect_ore(temp_bots, temp_levels, 1)
         temp_bots[t] += 1
-        collect(minutes - required, temp_bots, temp_levels, bp)
-
+        collect(minutes + time_required + 1, temp_bots, temp_levels, bp)
 
 
 def part1():
     blueprints = []
 
     for line in lines:
-        # line = line.replace(":", "")
-        # Blueprint 1: Each ore robot costs 4 ore. Each clay robot costs 4 ore. Each obsidian robot costs 2 ore and 11 clay. Each geode robot costs 2 ore and 7 obsidian.
         numbers = [int(x) for x in re.findall('[-+]?\d+', line)]
         orebot_cost = Cost(numbers[1], 0, 0)
         claybot_cost = Cost(numbers[2], 0, 0)
@@ -129,22 +139,14 @@ def part1():
         bp = Blueprint(numbers[0], orebot_cost, claybot_cost, obsidianbot_cost, geodebot_cost)
         blueprints.append(bp)
 
-    bots = {}
-    bots["ore"] = 1
-    bots["clay"] = 0
-    bots["obsidian"] = 0
-    bots["geode"] = 0
-    levels = {}
-    levels["ore"] = 1
-    levels["clay"] = 0
-    levels["obsidian"] = 0
-    levels["geode"] = 0
+    bots = {"ore": 1, "clay": 0, "obsidian": 0, "geode": 0}
+    levels = {"ore": 1, "clay": 0, "obsidian": 0, "geode": 0}
 
     for bp in blueprints:
         print(str(bp))
-        minutes = 23
-        collect(minutes, bots, levels, bp)
-        break
+        if str(bp).__contains__("Blueprint 1"):
+            continue
+        collect(1, deepcopy(bots), deepcopy(levels), bp)
 
 
 if __name__ == "__main__":
