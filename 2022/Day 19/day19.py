@@ -1,8 +1,8 @@
 import math
+from os import times_result
 import re
-from copy import deepcopy, copy
 
-file = open('input.csv', 'r')
+file = open('2022/Day 19/input.csv', 'r')
 lines = file.readlines()
 lines = [line.strip('\n' ',') for line in lines]
 types = ["ore", "clay", "obsidian", "geode"]
@@ -53,15 +53,29 @@ def collect_ore(bots, levels, minutes):
     return levels
 
 
+def copy_array(arr):
+    result = []
+    for val in arr:
+        result.append(val)
+    return result
+
+
+def copy_dict(dict):
+    result = {}
+    for key in dict:
+        result[key] = dict[key]
+    return result
+
+
 def can_generate(bots):
     types = []
-    if bots["ore"] > 0:
-        types.append("ore")
-        types.append("clay")
-    if bots["clay"] > 0:
-        types.append("obsidian")
     if bots["obsidian"] > 0:
         types.append("geode")
+    if bots["clay"] > 0:
+        types.append("obsidian")
+    if bots["ore"] > 0:
+        types.append("clay")
+        types.append("ore")
 
     return types
 
@@ -93,11 +107,11 @@ def pay_for_bot(levels, cost):
 
 def collect(minutes, bots, levels, bp):
     global max_geodes
-
+    # print("Minute", minutes)
     if minutes == 24:
         if levels["geode"] > max_geodes:
             max_geodes = levels["geode"]
-            print("Geodes:", max_geodes)
+            print("Time's up!\nGeodes:", max_geodes)
         # print(bots)
         # print(levels)
         return
@@ -107,27 +121,38 @@ def collect(minutes, bots, levels, bp):
     bot_types = can_generate(bots)  # the bot types that can be generated with the supply types currently being generated
 
     for t in bot_types:
-        if minutes == 1 and t == "clay":
-            print("Stop here")
+        #print(t)
+        # if minutes == 1 and t == "clay":
+            # print("Stop here")
         time_required = ore_required(levels, bots, bp.as_dict[t])
         if time_required > 24-minutes:  # not enough time left
-            temp_bots = copy(bots)
-            temp_levels = collect_ore(temp_bots, copy(levels), 24-minutes)  # generate everything until the end
+            temp_bots = copy_dict(bots)
+            temp_levels = collect_ore(temp_bots, copy_dict(levels), 24-minutes)  # generate everything until the end
             if temp_levels["geode"] > max_geodes:
                 max_geodes = temp_levels["geode"]
                 print("Geodes:", max_geodes)
             continue
         if time_required < 0:  # if time is negative, bot is ready to be built
             time_required = 0  # won't require extra time
-        temp_bots = copy(bots)
-        temp_levels = collect_ore(temp_bots, copy(levels), time_required)  # time elapses
+        temp_bots = copy_dict(bots)
+        temp_levels = copy_dict(levels)
+        #for time in range(1, time_required+1):
+            # print("Minute", minutes+time)
+            #temp_levels = collect_ore(temp_bots, temp_levels, 1)  # time elapses
+        temp_levels = collect_ore(temp_bots, copy_dict(levels), time_required)  # time elapses
+            # print(temp_levels)
+        # print("Minute", minutes+time_required+1)
         temp_levels = pay_for_bot(temp_levels, bp.as_dict[t])
+        # print(temp_levels)
         temp_levels = collect_ore(temp_bots, temp_levels, 1)
+        # print(temp_levels)
         temp_bots[t] += 1
         collect(minutes + time_required + 1, temp_bots, temp_levels, bp)
 
 
 def part1():
+    global max_geodes
+
     blueprints = []
 
     for line in lines:
@@ -143,10 +168,14 @@ def part1():
     levels = {"ore": 1, "clay": 0, "obsidian": 0, "geode": 0}
 
     for bp in blueprints:
-        print(str(bp))
-        if str(bp).__contains__("Blueprint 1"):
+        max_geodes = 0
+        if [1, 2, 3, 4].__contains__(bp.number):
             continue
-        collect(1, deepcopy(bots), deepcopy(levels), bp)
+        print(str(bp.number))
+        collect(1, copy_dict(bots), copy_dict(levels), bp)
+        print("Geodes cracked:", max_geodes)
+        print(bp.number * max_geodes)
+        print("-------------")
 
 
 if __name__ == "__main__":
