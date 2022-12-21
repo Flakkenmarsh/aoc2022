@@ -14,20 +14,26 @@ class Monkey:
         if len(params) == 1:
             self.value = int(params[0])
             self.operation = None
+            self.reverse_operation = None
             self.is_value = True
         else:
             self.value = None
             self.required_monkeys = [params[0], params[2]]
             if params[1] == "+":
                 self.operation = lambda x, y: x + y
+                self.reverse_operation = lambda target, y: target - y
             elif params[1] == "-":
                 self.operation = lambda x, y: x - y
+                self.reverse_operation = lambda target, y: target + y
             elif params[1] == "*":
                 self.operation = lambda x, y: x * y
+                self.reverse_operation = lambda target, y: target / y
             elif params[1] == "/":
                 self.operation = lambda x, y: x / y
+                self.reverse_operation = lambda target, y: target * y
             elif params[1] == "=":
                 self.operation = lambda x, y: x == y
+                self.reverse_operation = lambda target, y: target == y
 
 
 def all_have_shouted(monkeys):
@@ -55,8 +61,50 @@ def part1():
                     monkey.value = monkey.operation(monkeys[monkey.required_monkeys[0]].value, monkeys[monkey.required_monkeys[1]].value)
                     monkey.has_shouted = True
         if monkeys["root"].has_shouted:
-            print(monkeys["root"].value)
-            break
+            print("Part 1:", monkeys["root"].value)
+            return monkeys["root"].value
+
+
+def calculate(monkeys, monkey_name):
+    monkey = monkeys[monkey_name]
+    if monkey.name == "humn":
+        return None
+    if monkey.is_value:
+        return monkey.value
+    left = calculate(monkeys, monkey.required_monkeys[0])
+    right = calculate(monkeys, monkey.required_monkeys[1])
+    if left == None or right == None:
+        return None
+    return monkey.operation(left, right)
+
+
+def calculate_part2(monkeys, monkey_name, target):
+    monkey = monkeys[monkey_name]
+    if monkey.name == "humn":
+        print("humn value =", target)
+        return target
+    if monkey.is_value:
+        return monkey.value
+
+    left = calculate(monkeys, monkey.required_monkeys[0])
+    right = calculate(monkeys, monkey.required_monkeys[1])
+
+    if left == None:
+        if monkey.statement.__contains__("="):
+            left = calculate_part2(monkeys, monkey.required_monkeys[0], target)
+        else:
+            left = calculate_part2(monkeys, monkey.required_monkeys[0], monkey.reverse_operation(target, right))
+    if right == None:
+        if monkey.statement.__contains__("/"):
+            right = calculate_part2(monkeys, monkey.required_monkeys[1], monkey.reverse_operation(left, 1/target))
+        elif monkey.statement.__contains__("="):
+            right = calculate_part2(monkeys, monkey.required_monkeys[0], target)
+        elif monkey.statement.__contains__("-"):
+            right = calculate_part2(monkeys, monkey.required_monkeys[1], monkey.reverse_operation(-1*target, left))
+        else:
+            right = calculate_part2(monkeys, monkey.required_monkeys[1], monkey.reverse_operation(target, left))
+
+    return monkey.operation(left, right)
 
 
 def part2():
@@ -67,8 +115,18 @@ def part2():
             params[1] = params[1].replace("+", "=")
         m = Monkey(params[0], params[1])
         monkeys[params[0]] = m
+    
+    monkey = monkeys["root"]
+    left = calculate(monkeys, monkey.required_monkeys[0])
+    right = calculate(monkeys, monkey.required_monkeys[1])
+    if left == None:
+        a = calculate_part2(monkeys, monkey.name, right)
+    elif right == None:
+        a = calculate_part2(monkeys, monkey.name, left)
+    print("Part 2:", a)
 
-    while False:  # not all_have_shouted(monkeys):
+    monkeys["humn"].value = 3330805295850  # paste the printed humn value here to validate it
+    while not all_have_shouted(monkeys):
         for key in monkeys:
             monkey = monkeys[key]
             if monkey.is_value:
@@ -78,28 +136,8 @@ def part2():
                     monkey.value = monkey.operation(monkeys[monkey.required_monkeys[0]].value, monkeys[monkey.required_monkeys[1]].value)
                     monkey.has_shouted = True
         if monkeys["root"].has_shouted:
-            print(monkeys["root"].value)
-            break
-    
-    monkey = monkeys["root"]
-    queue = [monkey]
-    values = []
-    equation = ""
-    while len(queue) > 0:
-        monkey = queue.pop()
-        if monkey.name == "humn":
-            print(monkey.value)
-            break
-        if monkey.is_value:
-            monkey.has_shouted = True
-        else:
-            if not monkeys[monkey.required_monkeys[0]].has_shouted and not queue.__contains__(monkey.required_monkeys[0]):
-                queue.append(monkeys[monkey.required_monkeys[0]])
-            if not monkeys[monkey.required_monkeys[1]].has_shouted and not queue.__contains__(monkey.required_monkeys[1]):
-                queue.append(monkeys[monkey.required_monkeys[1]])
-
-
-
+            print("Part 2 (validation):", monkeys["root"].value)
+            return monkeys["root"].value
 
 if __name__ == "__main__":
     # part1()
