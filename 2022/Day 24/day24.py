@@ -120,7 +120,7 @@ def move(winds, minutes, positions):
         if len(n) > 0:
             new_positions += n
 
-    # for every new position, check whether it's the target.
+    # for every new position, check whether it's the destination.
     # If not, place an "E" on the new map
     for new_pos in new_positions:
         if new_pos[0] == height - 1 and new_pos[1] == width - 2:
