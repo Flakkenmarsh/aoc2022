@@ -207,5 +207,4 @@ def part1():
 
 
 if __name__ == "__main__":
-    sys.setrecursionlimit(10000)
     part1()
