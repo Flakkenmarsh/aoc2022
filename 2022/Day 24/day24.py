@@ -137,7 +137,7 @@ def move(winds, minutes, positions):
             keep_positions.append((row, e_positions[-i]))
 
     # print_map_plain(new_map)
-    # all wind must advance by one positions
+    # all wind must advance by one position
     for w in winds:
         w.move()
     return move(winds, minutes + 1, keep_positions)
