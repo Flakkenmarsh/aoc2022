@@ -11,8 +11,13 @@ board_map = []
 board_tiles = []
 instructions = ""
 cube = {}
-vertical_band = [1, 4, 5, 2]
-horizontal_band = [1, 6, 5, 3]
+# example
+#vertical_band = [1, 4, 5, 2]
+#horizontal_band = [1, 6, 5, 3]
+# actual
+vertical_band = [1, 3, 5, 6]
+horizontal_band = [1, 2, 5, 4]
+cube_length = 50
 
 
 # class Side
@@ -20,9 +25,7 @@ class Side:
     def __init__(self, side):
         self.side = side
         self.values = []
-        self.matrix =  [[0 for _ in range(50)] for _ in range(50)] # np.empty([4, 4], dtype=str)
-        self.neighbours = []
-        self.opposite = 0
+        self.matrix =  [[0 for _ in range(cube_length)] for _ in range(cube_length)] # np.empty([4, 4], dtype=str)
         self.rotations_performed = 0  # how many rot90s performed
 
 
@@ -188,24 +191,15 @@ def setup_part2():
 
     instructions = lines[-1]
     cube = {1: Side(1), 2: Side(2), 3: Side(3), 4: Side(4), 5: Side(5), 6: Side(6)}
-    #        1111
-    #        1111
-    #        1111
-    #        1111
-    #222233334444
-    #222233334444
-    #222233334444
-    #222233334444
-    #        55556666
-    #        55556666
-    #        55556666
-    #        55556666
-    cube[1].neighbours = {cube[2], cube[3], cube[4], cube[6]}
-    cube[2].neighbours = {cube[1], cube[3], cube[5], cube[6]}
-    cube[3].neighbours = {cube[1], cube[2], cube[4], cube[5]}
-    cube[4].neighbours = {cube[1], cube[3], cube[5], cube[6]}
-    cube[5].neighbours = {cube[2], cube[3], cube[4], cube[6]}
-    cube[6].neighbours = {cube[1], cube[2], cube[4], cube[5]}
+
+    #for row in range(0, 4):
+    #    cube[1].values.append(lines[row].strip())
+    #for row in range(4, 8):
+    #    for col in range(0, 3):
+    #        cube[2+col].values.append(lines[row][col*4:col*4 + 4])
+    #for row in range(8, 12):
+    #    for col in range(0, 2):
+    #        cube[5+col].values.append(lines[row].strip()[col*4:col*4+4])
 
     for row in range(0, 50):
         cube[1].values.append(lines[row].strip()[0:50])
@@ -222,18 +216,13 @@ def setup_part2():
         for row in range(len(cube[c].values)):
             for col in range(len(cube[c].values[row])):
                 cube[c].matrix[row][col] = cube[c].values[row][col]
-    cube[1].opposite = 5
-    cube[2].opposite = 4
-    cube[3].opposite = 6
-    cube[4].opposite = 2
-    cube[5].opposite = 1
-    cube[6].opposite = 3
+
     print("Setup done.")
 
 
 def get_new_face_layout(direction):
-    global vertical_band  # = [1, 4, 5, 2]
-    global horizontal_band  # = [1, 6, 5, 3]
+    global vertical_band
+    global horizontal_band
 
     v_band = deepcopy(vertical_band)
     h_band = deepcopy(horizontal_band)
@@ -259,29 +248,32 @@ def get_new_face_layout(direction):
 
 
 # rotate matrix counter clockwise
-def rotate_matrix_ccw(m):
-    return [[m[j][i] for j in range(len(m))] for i in range(len(m[0])-1,-1,-1)]
+def rotate_matrix_ccw(matrix, times):
+    times %= 4
+    m = deepcopy(matrix)
+    for _ in range(times):
+        m = [[m[j][i] for j in range(len(m))] for i in range(len(m[0])-1,-1,-1)]
+    return m
 
-# rotate matrix clockwise
-def rotate_matrix_cw(m, times):
-    for i in range(times):
-        m = rotate_matrix_ccw(m)
-        m = rotate_matrix_ccw(m)
-        m = rotate_matrix_ccw(m)
+
+def rotate_matrix_cw(matrix, times):
+    times %= 4
+    m = deepcopy(matrix)
+    for _ in range(times):
+        m = list(list(x)[::-1] for x in zip(*m))
     return m
 
         
 def part2():
     global cube
     global instructions
-    global vertical_band  # = [1, 4, 5, 2]
-    global horizontal_band  # = [1, 6, 5, 3]
+    global vertical_band
+    global horizontal_band
+    global cube_length
 
     instructions += "D"  # for Done
     distances = [int(d) for d in re.findall(r'\d+', instructions)]
     turns = re.findall("[RLD]+", instructions)
-    vertical_band = [1, 4, 5, 2]
-    horizontal_band = [1, 6, 5, 3]
     for c in cube:
         print("Side", c) 
         for row in cube[c].values:
@@ -297,12 +289,12 @@ def part2():
     # how many cw rotations should be performed when switching sides
     # example
     #attached_sides = {"1->2": 2, "1->3": 1, "1->4": 0, "1->6": 2,
-     #                 "2->1": 2, "2->3": 0, "2->5": 2, "2->6": 3,
-      #                "3->1": 3, "3->2": 0, "3->4": 0, "3->5": 1,
-       #               "4->1": 0, "4->3": 0, "4->5": 0, "4->6": 3,
-        #              "5->2": 2, "5->3": 3, "5->4": 0, "5->6": 0,
-         #             "6->1": 2, "6->2": 1, "6->4": 1, "6->5": 0} 
-    
+    #                  "2->1": 2, "2->3": 0, "2->5": 2, "2->6": 3,
+    #                  "3->1": 3, "3->2": 0, "3->4": 0, "3->5": 1,
+    #                  "4->1": 0, "4->3": 0, "4->5": 0, "4->6": 3,
+    #                  "5->2": 2, "5->3": 3, "5->4": 0, "5->6": 0,
+    #                  "6->1": 2, "6->2": 1, "6->4": 1, "6->5": 0} 
+    # actual
     attached_sides = {"1->2": 0, "1->3": 0, "1->4": 2, "1->6": 3,
                       "2->1": 0, "2->3": 3, "2->5": 2, "2->6": 0,
                       "3->1": 0, "3->2": 1, "3->4": 1, "3->5": 0,
@@ -311,10 +303,9 @@ def part2():
                       "6->1": 1, "6->2": 0, "6->4": 0, "6->5": 1} 
 
     # print_board_with_position(cube[1].matrix, (0, 0), "right")
-    print("Num turns:", len(turns))
     for i in range(len(turns)):
-        print(i, "/", len(turns))
-        # print(distances[i])
+        print(i, "/", len(turns)-1)
+        #print(distances[i])
         temp_pos = [0, 0]
         for j in range(distances[i]):
             temp_pos[0] = pos[0] + movements[direction][0]
@@ -322,22 +313,22 @@ def part2():
             
             rotation_required = False
             if temp_pos[0] < 0:  # go up a face
-                # print("Go up")
+                #print("Go up")
                 v_band, h_band = get_new_face_layout("up")
                 rotation_required = True
                 temp_pos[0] = cube_length - 1
             elif temp_pos[0] >= cube_length:  # go down a face
-                # print("Go down")
+                #print("Go down")
                 v_band, h_band = get_new_face_layout("down")
                 rotation_required = True
                 temp_pos[0] = 0
             elif temp_pos[1] < 0:  # go to the left face
-                # print("Go left")
+                #print("Go left")
                 v_band, h_band = get_new_face_layout("left")
                 rotation_required = True
                 temp_pos[1] = cube_length - 1
             elif temp_pos[1] >= cube_length:  # go to the right face
-                # print("Go right")
+                #print("Go right")
                 v_band, h_band = get_new_face_layout("right")
                 rotation_required = True
                 temp_pos[1] = 0
@@ -351,21 +342,22 @@ def part2():
                     vertical_band = v_band
                     horizontal_band = h_band
                     face = new_face
-                    cube[new_face].matrix = face_matrix
+                    cube[new_face].matrix = deepcopy(face_matrix)
                     cube[new_face].rotations_performed += num_rotations
             
             if not rotation_required and cube[face].matrix[temp_pos[0]][temp_pos[1]] != "#":
                 pos = deepcopy(temp_pos)
-            # print("Face", face)
-            # print_board_with_position(cube[face].matrix, pos, movement_directions[direction])
+            #print("Face", face)
+            #print_board_with_position(cube[face].matrix, pos, movement_directions[direction])
         direction += 1 if turns[i] == "R" else -1
         if direction < 0 or direction >= 4:
             direction %= 4
-        # print("turn", turns[i])
-
+        #print("turn", turns[i])
+    direction += 1  # to correct for the D at the end
     temp_matrix = [[[j, i] for i in range(cube_length)] for j in range(cube_length)]
-    temp_matrix = rotate_matrix_cw(temp_matrix, 4 - (cube[face].rotations_performed % 4))
-
+    temp_matrix = rotate_matrix_ccw(temp_matrix, cube[face].rotations_performed)
+    print("Rotations performed on current face:", cube[face].rotations_performed%4)
+    print("Face:", face)
     print("Coords:", [(index, row.index(pos)) for index, row in enumerate(temp_matrix) if pos in row])
     print("Facing:", direction)
 
