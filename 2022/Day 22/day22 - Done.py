@@ -285,6 +285,8 @@ def part2():
     face = 1
     pos = [0, 0]
     cube_length = len(cube[1].values)
+
+    debug = False
     
     # how many cw rotations should be performed when switching sides
     # example
@@ -305,30 +307,39 @@ def part2():
     # print_board_with_position(cube[1].matrix, (0, 0), "right")
     for i in range(len(turns)):
         print(i, "/", len(turns)-1)
-        #print(distances[i])
+        if i == 24 and debug:
+            print("Stop here first")
+        if debug:
+            print(distances[i])
         temp_pos = [0, 0]
-        for j in range(distances[i]):
+        for _ in range(distances[i]):
+            if distances[i] == 4 and debug:
+                print("Stop here")
             temp_pos[0] = pos[0] + movements[direction][0]
             temp_pos[1] = pos[1] + movements[direction][1]
             
             rotation_required = False
             if temp_pos[0] < 0:  # go up a face
-                #print("Go up")
+                if debug:
+                    print("Go up")
                 v_band, h_band = get_new_face_layout("up")
                 rotation_required = True
                 temp_pos[0] = cube_length - 1
             elif temp_pos[0] >= cube_length:  # go down a face
-                #print("Go down")
+                if debug:
+                    print("Go down")
                 v_band, h_band = get_new_face_layout("down")
                 rotation_required = True
                 temp_pos[0] = 0
             elif temp_pos[1] < 0:  # go to the left face
-                #print("Go left")
+                if debug:
+                    print("Go left")
                 v_band, h_band = get_new_face_layout("left")
                 rotation_required = True
                 temp_pos[1] = cube_length - 1
             elif temp_pos[1] >= cube_length:  # go to the right face
-                #print("Go right")
+                if debug:
+                    print("Go right")
                 v_band, h_band = get_new_face_layout("right")
                 rotation_required = True
                 temp_pos[1] = 0
@@ -338,21 +349,27 @@ def part2():
                 num_rotations = cube[face].rotations_performed + attached_sides[str(old_face) + "->" + str(new_face)]
                 face_matrix = rotate_matrix_cw(cube[new_face].matrix, num_rotations)
                 if face_matrix[temp_pos[0]][temp_pos[1]] != "#":
-                    pos = temp_pos
-                    vertical_band = v_band
-                    horizontal_band = h_band
+                    pos = deepcopy(temp_pos)
+                    vertical_band = deepcopy(v_band)
+                    horizontal_band = deepcopy(h_band)
                     face = new_face
                     cube[new_face].matrix = deepcopy(face_matrix)
                     cube[new_face].rotations_performed += num_rotations
+                else:
+                    break
             
             if not rotation_required and cube[face].matrix[temp_pos[0]][temp_pos[1]] != "#":
                 pos = deepcopy(temp_pos)
-            #print("Face", face)
-            #print_board_with_position(cube[face].matrix, pos, movement_directions[direction])
+            if cube[face].matrix[temp_pos[0]][temp_pos[1]] == "#":
+                break
+            if debug:
+                print("Face", face)
+                print_board_with_position(cube[face].matrix, pos, movement_directions[direction])
         direction += 1 if turns[i] == "R" else -1
         if direction < 0 or direction >= 4:
             direction %= 4
-        #print("turn", turns[i])
+        if debug:
+            print("turn", turns[i])
     direction += 1  # to correct for the D at the end
     temp_matrix = [[[j, i] for i in range(cube_length)] for j in range(cube_length)]
     temp_matrix = rotate_matrix_ccw(temp_matrix, cube[face].rotations_performed)
