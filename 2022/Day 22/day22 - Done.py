@@ -348,7 +348,7 @@ def part2():
             old_face = face
             if rotation_required:
                 new_face = v_band[0]
-                num_rotations = cube[old_face].rotations_performed - cube[new_face].rotations_performed + attached_sides[str(old_face) + "->" + str(new_face)]
+                num_rotations = abs(cube[old_face].rotations_performed - cube[new_face].rotations_performed) + attached_sides[str(old_face) + "->" + str(new_face)]
                 face_matrix = rotate_matrix_cw(cube[new_face].matrix, num_rotations)
                 if face_matrix[temp_pos[0]][temp_pos[1]] != "#":
                     pos = deepcopy(temp_pos)
@@ -377,8 +377,13 @@ def part2():
     temp_matrix = rotate_matrix_ccw(temp_matrix, cube[face].rotations_performed)
     print("Rotations performed on current face:", cube[face].rotations_performed%4)
     print("Face:", face)
-    print("Coords:", [(index, row.index(pos)) for index, row in enumerate(temp_matrix) if pos in row])
+    coords = [(index, row.index(pos)) for index, row in enumerate(temp_matrix) if pos in row]
+    print("Coords:", coords)
+    if face == 5:
+        coords[0] = (coords[0][0] + 101, coords[0][1] + 51)
+    
     print("Facing:", direction)
+    print("Part 2:", coords[0][0]*1000 + coords[0][1]*4 + abs(cube[face].rotations_performed%4 - direction))
 
 
 if __name__ == "__main__":
