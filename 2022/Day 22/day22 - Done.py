@@ -305,9 +305,11 @@ def part2():
                       "6->1": 1, "6->2": 0, "6->4": 0, "6->5": 1} 
 
     # print_board_with_position(cube[1].matrix, (0, 0), "right")
+    print(len(turns))
+    print(len(distances))
     for i in range(len(turns)):
         print(i, "/", len(turns)-1)
-        if i == 24 and debug:
+        if i == 58 and debug:
             print("Stop here first")
         if debug:
             print(distances[i])
@@ -346,7 +348,7 @@ def part2():
             old_face = face
             if rotation_required:
                 new_face = v_band[0]
-                num_rotations = cube[face].rotations_performed + attached_sides[str(old_face) + "->" + str(new_face)]
+                num_rotations = cube[old_face].rotations_performed - cube[new_face].rotations_performed + attached_sides[str(old_face) + "->" + str(new_face)]
                 face_matrix = rotate_matrix_cw(cube[new_face].matrix, num_rotations)
                 if face_matrix[temp_pos[0]][temp_pos[1]] != "#":
                     pos = deepcopy(temp_pos)
