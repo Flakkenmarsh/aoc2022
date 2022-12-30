@@ -6,7 +6,7 @@ from operator import itemgetter
 import time
 
 
-file = open('input.csv', 'r')
+file = open('2022/Day 16/input.csv', 'r')
 lines = file.readlines()
 lines = [line.strip('\n' ',') for line in lines]
 valves = {}
@@ -120,7 +120,7 @@ def do_thing(part):
         traverse(30, "AA", valves_to_open, 0)
         print("----------------------------")
     else:
-        traverse_with_elephant(26, valves_to_open)
+        traverse_with_elephant(26, valves_to_open, [], 0, 1, 1, "AA", None, "AA", None)
 
 
 def copy_valves(rem_valves):
@@ -164,97 +164,96 @@ def get_distances(remaining_valves, minutes_remaining, current):
     return sorted(distances, key=itemgetter(1), reverse=True)
 
 
-def traverse_with_elephant(minutes_remaining, remaining_valves):
+def traverse_with_elephant(minutes_remaining, remaining_valves, open_valves, total_pressure, my_time_left, ele_time_left,
+                           my_origin, my_destination, ele_origin, ele_destination):
     global valves
     global max_pressure
 
-    total_pressure = 0
-    my_time_left = 0
-    ele_time_left = 0
-    open_valves = []
-    my_origin = "AA"
-    ele_origin = "AA"
-    my_destination = "AA"
-    ele_destination = "AA"
+    if minutes_remaining == 0:
+        if total_pressure > max_pressure:
+            max_pressure = total_pressure
+            print("Time's up:", max_pressure)
+        return
 
-    open_valves.append(my_destination)
-    ele_distances = get_distances(remaining_valves, minutes_remaining, my_origin)
-    my_distances = get_distances(remaining_valves, minutes_remaining, ele_origin)
-    my_origin = my_destination
-    ele_origin = ele_destination
-    if ele_distances[0][0] == my_distances[0][0]:
-        if my_distances[0][1] > ele_distances[0][1]:  # I take that valve
-            my_time_left = 1 + valves[my_destination].distance_to_others[my_distances[0][0]]
-            ele_time_left = 1 + valves[ele_destination].distance_to_others[ele_distances[1][0]]
-            my_destination = my_distances[0][0]
-            ele_destination = ele_distances[1][0]
-        else:
-            my_time_left = 1 + valves[my_origin].distance_to_others[my_distances[1][0]]
-            ele_time_left = 1 + valves[ele_origin].distance_to_others[ele_distances[0][0]]
-            my_destination = my_distances[1][0]
-            ele_destination = ele_distances[0][0]
-    remaining_valves.remove(ele_destination)
-    remaining_valves.remove(my_destination)
-    while minutes_remaining >= 0:
-        minutes_remaining -= 1
-        my_time_left -= 1
-        ele_time_left -= 1
-        total_pressure += calculate_pressure_release(open_valves)
-        print(total_pressure)
+    if len(open_valves) == 6:
+        total_pressure += calculate_pressure_release(open_valves)*(minutes_remaining)
+        if total_pressure > max_pressure:
+            max_pressure = total_pressure
+            print("All are open:", max_pressure)
+        return
 
-        if ele_time_left == 0 and my_time_left == 0:  # choose new destination
-            open_valves.append(my_destination)
-            open_valves.append(ele_destination)
-            ele_distances = get_distances(remaining_valves, minutes_remaining, ele_destination)
-            my_distances = get_distances(remaining_valves, minutes_remaining, my_destination)
-            my_origin = my_destination
-            ele_origin = ele_destination
-            if ele_distances[0][0] == my_distances[0][0]:
-                if my_distances[0][1] > ele_distances[0][1]:  # I take that valve
-                    my_time_left = 1 + valves[my_destination].distance_to_others[my_distances[0][0]]
-                    ele_time_left = 1 + valves[ele_destination].distance_to_others[ele_distances[1][0]]
-                    my_destination = my_distances[0][0]
-                    ele_destination = ele_distances[1][0]
-                elif my_distances[0][1] < ele_distances[0][1]:
-                    my_time_left = 1 + valves[my_origin].distance_to_others[my_distances[1][0]]
-                    ele_time_left = 1 + valves[ele_origin].distance_to_others[ele_distances[0][0]]
-                    my_destination = my_distances[1][0]
-                    ele_destination = ele_distances[0][0]
-                else:
-                    if my_distances[1][1] > ele_distances[1][1]:  # I take that valve
-                        my_time_left = 1 + valves[my_destination].distance_to_others[my_distances[1][0]]
-                        ele_time_left = 1 + valves[ele_destination].distance_to_others[ele_distances[2][0]]
-                        my_destination = my_distances[1][0]
-                        ele_destination = ele_distances[2][0]
-                    elif my_distances[1][1] < ele_distances[1][1]:
-                        my_time_left = 1 + valves[my_origin].distance_to_others[my_distances[2][0]]
-                        ele_time_left = 1 + valves[ele_origin].distance_to_others[ele_distances[1][0]]
-                        my_destination = my_distances[2][0]
-                        ele_destination = ele_distances[1][0]
-                    else:
-                        print("Oh dear")
-            remaining_valves.remove(my_destination)
-            remaining_valves.remove(ele_destination)
-        else:
-            if ele_time_left == 0:
-                ele_distances = get_distances(remaining_valves, minutes_remaining, ele_destination)
+    if total_pressure > max_pressure:
+        max_pressure = total_pressure
+        print(max_pressure)
+
+    # minutes_remaining -= 1
+    my_time_left -= 1
+    ele_time_left -= 1
+    
+    if ele_time_left == 0:
+        if ele_destination is not None:
+            if not open_valves.__contains__(ele_destination):
                 open_valves.append(ele_destination)
-                ele_origin = ele_destination
-                ele_destination = ele_distances[0][0]
-                remaining_valves.remove(ele_destination)
-                ele_time_left = 1 + valves[ele_origin].distance_to_others[ele_destination]
-            if my_time_left == 0:
-                my_distances = get_distances(remaining_valves, minutes_remaining, my_destination)
+            ele_origin = ele_destination
+    if my_time_left == 0:
+        if my_destination is not None:
+            if not open_valves.__contains__(my_destination):
                 open_valves.append(my_destination)
-                my_origin = my_destination
-                my_destination = my_distances[0][0]
-                remaining_valves.remove(my_destination)
-                my_time_left = 1 + valves[my_origin].distance_to_others[my_destination]
+            my_origin = my_destination
+    search_depth = 8
+    pr = calculate_pressure_release(open_valves)
+    #print("Open valves:", open_valves)
+    #print("Minute:", 27-minutes_remaining, "Pressure released:", pr)
+    total_pressure += pr
 
-    print(total_pressure)
+    if (ele_time_left == 0 and my_time_left == 0) and remaining_valves != []:  # choose new destination
+        ele_distances = get_distances(remaining_valves, minutes_remaining, ele_origin)
+        for i in range(min(search_depth, len(ele_distances))):
+            ele_each = ele_distances[i]
+            temp_remaining = deepcopy(remaining_valves)
+            temp_remaining.remove(ele_each[0])
+            my_distances = get_distances(temp_remaining, minutes_remaining, my_origin)
+            for j in range(min(search_depth, len(my_distances))):
+                my_each = my_distances[j]
+                my_temp_remaining = deepcopy(temp_remaining)
+                my_temp_remaining.remove(my_each[0])
+                traverse_with_elephant(minutes_remaining - 1, my_temp_remaining, deepcopy(open_valves), total_pressure, 
+                                       1 + valves[my_origin].distance_to_others[my_each[0]],
+                                       1 + valves[ele_origin].distance_to_others[ele_each[0]],
+                                       my_origin, my_each[0], ele_origin, ele_each[0])
+            if my_distances == []:
+                traverse_with_elephant(minutes_remaining - 1, [], deepcopy(open_valves), total_pressure, 
+                                       0,
+                                       1 + valves[ele_origin].distance_to_others[ele_each[0]],
+                                       my_origin, None, ele_origin, ele_each[0])
+    elif (ele_time_left == 0 or my_time_left == 0) and remaining_valves != []:
+        if ele_time_left == 0:
+            ele_distances = get_distances(remaining_valves, minutes_remaining, ele_origin)
+            for i in range(min(search_depth, len(ele_distances))):
+                each = ele_distances[i]
+                ele_d = each[0]
+                temp_remaining = deepcopy(remaining_valves)
+                temp_remaining.remove(ele_d)
+                traverse_with_elephant(minutes_remaining - 1, temp_remaining, deepcopy(open_valves), total_pressure, 
+                                       my_time_left, 1 + valves[ele_origin].distance_to_others[ele_d],
+                                       my_origin, my_destination, ele_origin, ele_d)
+        elif my_time_left == 0:
+            my_distances = get_distances(remaining_valves, minutes_remaining, my_origin)
+            for i in range(min(search_depth, len(my_distances))):
+                each = my_distances[i]
+                my_d = each[0]
+                temp_remaining = deepcopy(remaining_valves)
+                temp_remaining.remove(my_d)
+                traverse_with_elephant(minutes_remaining - 1, temp_remaining, deepcopy(open_valves), total_pressure, 
+                                       1 + valves[my_origin].distance_to_others[my_d], ele_time_left,
+                                       my_origin, my_d, ele_origin, ele_destination)
+    else:
+        traverse_with_elephant(minutes_remaining - 1, remaining_valves, deepcopy(open_valves), total_pressure, 
+                                       my_time_left, ele_time_left,
+                                       my_origin, my_destination, ele_origin, ele_destination)
 
 
-def part1():
+def setup():
     global valves
     global max_pressure
 
@@ -272,10 +271,15 @@ def part1():
     do_thing(1)
 
 
+def part1():
+    do_thing(1)
+
+
 def part2():
     do_thing(2)
 
 
 if __name__ == "__main__":
-    part1()
+    setup()
+    max_pressure = 0
     part2()
