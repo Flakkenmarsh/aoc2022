@@ -175,11 +175,19 @@ def traverse_with_elephant(minutes_remaining, remaining_valves, open_valves, tot
             print("Time's up:", max_pressure)
         return
 
-    if len(open_valves) == 6:
+    if len(open_valves) == 15:
         total_pressure += calculate_pressure_release(open_valves)*(minutes_remaining)
         if total_pressure > max_pressure:
             max_pressure = total_pressure
             print("All are open:", max_pressure)
+        return
+
+    all_remaining = deepcopy(remaining_valves)
+    if my_destination is not None and not all_remaining.__contains__(my_destination):
+        all_remaining.append(my_destination)
+    if ele_destination is not None and not all_remaining.__contains__(ele_destination):
+        all_remaining.append(ele_destination)
+    if total_pressure + calculate_pressure_release(all_remaining)*minutes_remaining < max_pressure:
         return
 
     if total_pressure > max_pressure:
@@ -200,7 +208,7 @@ def traverse_with_elephant(minutes_remaining, remaining_valves, open_valves, tot
             if not open_valves.__contains__(my_destination):
                 open_valves.append(my_destination)
             my_origin = my_destination
-    search_depth = 8
+    search_depth = 20
     pr = calculate_pressure_release(open_valves)
     #print("Open valves:", open_valves)
     #print("Minute:", 27-minutes_remaining, "Pressure released:", pr)
