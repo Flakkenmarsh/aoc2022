@@ -17,19 +17,24 @@ def part1():
             if distance > distances[i]:
                 ways_to_win[i] += 1
 
-    print(ways_to_win)
+    print("Part 1: ", end="")
     print(math.prod(ways_to_win))
 
 
 def part2():
-    total = 0
-    for line in lines:
-        numbers = [int(d) for d in re.findall(r'\d+', line)]
-        print(numbers)
+    time = int("".join(re.findall(r'\d+', lines[0])))
+    distance = int("".join(re.findall(r'\d+', lines[1])))
+    ways_to_win = 0
 
-    print(total)
+    for holding_time in range(time):
+        calculated_distance = (time - holding_time) * holding_time
+        if calculated_distance > distance:
+            ways_to_win += 1
+
+    print("Part 2: ", end="")
+    print(ways_to_win)
 
 
 if __name__ == "__main__":
     part1()
-    # part2()
+    part2()
